@@ -48,13 +48,20 @@
 static const char *romfile;
 static uint64_t bootrom_gpa = (1ULL << 32);
 
+const char *
+bootrom(void)
+{
+    return (romfile);
+}
+
 void
 bootrom_init(const char *romfile_path)
 {
     romfile = romfile_path;
 }
 
-uint64_t bootrom_load(void)
+uint64_t
+bootrom_load(void)
 {
 
     struct stat sbuf;

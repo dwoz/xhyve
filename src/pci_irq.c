@@ -39,6 +39,7 @@
 #include <xhyve/pci_emul.h>
 #include <xhyve/pci_irq.h>
 #include <xhyve/pci_lpc.h>
+#include <xhyve/firmware/bootrom.h>
 
 /*
  * Implement an 8 pin PCI interrupt router compatible with the router
@@ -186,20 +187,25 @@ pci_irq_deassert(struct pci_devinst *pi)
 }
 
 int
-pirq_alloc_pin(void)
+pirq_alloc_pin(struct pci_devinst *pi)
 {
 	int best_count, best_irq, best_pin, irq, pin;
 
 	pirq_cold = 0;
 
-	/* First, find the least-used PIRQ pin. */
-	best_pin = 0;
-	best_count = pirqs[0].use_count;
-	for (pin = 1; ((unsigned) pin) < nitems(pirqs); pin++) {
-		if (pirqs[pin].use_count < best_count) {
-			best_pin = pin;
-			best_count = pirqs[pin].use_count;
-		}
+        if (bootrom()) {
+            /* For external bootrom use fixed mapping. */
+            best_pin = (4 + pi->pi_slot + pi->pi_lintr.pin) % 8;
+        } else {
+            /* Find the least-used PIRQ pin. */
+            best_pin = 0;
+            best_count = pirqs[0].use_count;
+            for (pin = 1; (unsigned)pin < nitems(pirqs); pin++) {
+                if (pirqs[pin].use_count < best_count) {
+                    best_pin = pin;
+                    best_count = pirqs[pin].use_count;
+                }
+            }
 	}
 	pirqs[best_pin].use_count++;
 
