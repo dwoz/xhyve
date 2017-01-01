@@ -411,17 +411,17 @@ vmexit_spinup_ap(struct vm_exit *vme, int *pvcpu)
 static int
 vmexit_vmx(struct vm_exit *vme, int *pvcpu)
 {
-	fprintf(stderr, "vm exit[%d]\n", *pvcpu);
-	fprintf(stderr, "\treason\t\tVMX\n");
-	fprintf(stderr, "\trip\t\t0x%016llx\n", vme->rip);
-	fprintf(stderr, "\tinst_length\t%d\n", vme->inst_length);
-	fprintf(stderr, "\tstatus\t\t%d\n", vme->u.vmx.status);
-	fprintf(stderr, "\texit_reason\t%u\n", vme->u.vmx.exit_reason);
-	fprintf(stderr, "\tqualification\t0x%016llx\n",
-	    vme->u.vmx.exit_qualification);
-	fprintf(stderr, "\tinst_type\t\t%d\n", vme->u.vmx.inst_type);
-	fprintf(stderr, "\tinst_error\t\t%d\n", vme->u.vmx.inst_error);
-	return (VMEXIT_ABORT);
+    fprintf(stderr, "vm exit[%d]\r\n", *pvcpu);
+    fprintf(stderr, "\treason\t\tVMX\r\n");
+    fprintf(stderr, "\trip\t\t0x%016llx\r\n", vme->rip);
+    fprintf(stderr, "\tinst_length\t%d\r\n", vme->inst_length);
+    fprintf(stderr, "\tstatus\t\t%d\n\r\n", vme->u.vmx.status);
+    fprintf(stderr, "\texit_reason\t%u\r\n", vme->u.vmx.exit_reason);
+    fprintf(stderr, "\tqualification\t0x%016llx\r\n",
+        vme->u.vmx.exit_qualification);
+    fprintf(stderr, "\tinst_type\t\t%d\r\n", vme->u.vmx.inst_type);
+    fprintf(stderr, "\tinst_error\t\t%d\r\n", vme->u.vmx.inst_error);
+    return (VMEXIT_ABORT);
 }
 
 static int

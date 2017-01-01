@@ -136,6 +136,9 @@ sig_ttyclose(int signo)
         if (signo == SIGTERM) {
                 exit(1);
         }
+        if (signo == SIGABRT) {
+                exit(1);
+        }
 }
 
 static void
@@ -152,6 +155,7 @@ ttyopen(struct ttyfd *tf)
 	if (tf->fd == STDIN_FILENO) {
 		tio_stdio_orig = tf->tio_orig;
                 signal(SIGTERM, sig_ttyclose);
+                signal(SIGABRT, sig_ttyclose);
 		atexit(ttyclose);
 	}
 }
