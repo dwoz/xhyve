@@ -65,6 +65,7 @@ XHYVE_SRC := \
 
 FIRMWARE_SRC := \
 	src/firmware/kexec.c \
+	src/firmware/multiboot.c \
 	src/firmware/fbsd.c
 
 SRC := \
