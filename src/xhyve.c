@@ -722,12 +722,12 @@ parse_memsize(const char *opt, size_t *ret_memsize)
 
 static int
 firmware_parse(const char *opt) {
-	char *fw, *opt1, *opt2, *opt3, *cp;
+        char *fw, *opt1, *opt2, *opt3, *cp;
 
-	fw = strdup(opt);
+        fw = strdup(opt);
 
-	if (strncmp(fw, "kexec", strlen("kexec")) == 0) {
-		fw_func = kexec;
+        if (strncmp(fw, "kexec", strlen("kexec")) == 0) {
+                fw_func = kexec;
 
                 if ((cp = strchr(fw, ',')) != NULL) {
                         *cp = '\0';
@@ -751,8 +751,8 @@ firmware_parse(const char *opt) {
                 }
 
 
-	} else if (strncmp(fw, "fbsd", strlen("fbsd")) == 0) {
-		fw_func = fbsd_load;
+        } else if (strncmp(fw, "fbsd", strlen("fbsd")) == 0) {
+                fw_func = fbsd_load;
 
                 if ((cp = strchr(fw, ',')) != NULL) {
                         *cp = '\0';
@@ -776,7 +776,6 @@ firmware_parse(const char *opt) {
                 }
         } else if (strncmp(fw, "multiboot", strlen("multiboot")) == 0) {
                 fw_func = multiboot;
-
                 if ((cp = strchr(fw, ',')) != NULL) {
                         *cp = '\0';
                         opt1 = cp + 1;
@@ -797,6 +796,7 @@ firmware_parse(const char *opt) {
                 } else {
                         goto fail;
                 }
+
         } else if (strncmp(fw, "bootrom", strlen("bootrom")) == 0) {
                 fw_func = bootrom_load;
                 opt2 = "";
@@ -808,35 +808,37 @@ firmware_parse(const char *opt) {
                         goto fail;
                 }
 
-	} else {
-		goto fail;
-	}
+        } else {
+                goto fail;
+        }
 
-	opt2 = strlen(opt2) ? opt2 : NULL;
-	opt3 = strlen(opt3) ? opt3 : NULL;
+        opt2 = strlen(opt2) ? opt2 : NULL;
+        opt3 = strlen(opt3) ? opt3 : NULL;
 
-	if (fw_func == kexec) {
-		kexec_init(opt1, opt2, opt3);
-	} else if (fw_func == fbsd_load) {
-		/* FIXME: let user set boot-loader serial device */
-		fbsd_init(opt1, opt2, opt3, NULL);
+        if (fw_func == kexec) {
+                kexec_init(opt1, opt2, opt3);
+        } else if (fw_func == fbsd_load) {
+                /* FIXME: let user set boot-loader serial device */
+                fbsd_init(opt1, opt2, opt3, NULL);
+        } else if (fw_func == multiboot) {
+                multiboot_init(opt1, opt2, opt3);
         } else if (fw_func == bootrom_load) {
                 bootrom_init(opt1);
-	} else {
-		goto fail;
-	}
+        } else {
+                goto fail;
+        }
 
     return 0;
 
 fail:
 
-	fprintf(stderr, "Invalid firmware argument\n"
-		"    -f kexec,'kernel','initrd','\"cmdline\"'\n"
+        fprintf(stderr, "Invalid firmware argument\n"
+                "    -f kexec,'kernel','initrd','\"cmdline\"'\n"
                 "    -f fbsd,'userboot','boot volume','\"kernel env\"'\n"
                 "    -f multiboot,'kernel',module:module:...,cmdline\n"
                 "    -f bootrom,'ROM'\n");
 
-	return -1;
+        return -1;
 
 }
 

@@ -144,14 +144,16 @@ struct elf_phdr {
 //
 // called by xhyve to pass in the firmware arguments
 //
-void multiboot_init(char *kernel_path, char *module_list, char *kernel_append)
+void
+multiboot_init(char *kernel_path, char *module_list, char *kernel_append)
 {
     config.kernel_path = kernel_path;
     config.module_list = module_list;
     config.kernel_append = kernel_append;
 }
 
-static int multiboot_parse_elf(struct boot_config *bc)
+static int
+multiboot_parse_elf(struct boot_config *bc)
 {
     struct elf_ehdr *ehdr = bc->mapping;
     struct elf_phdr *phdr;
@@ -208,7 +210,8 @@ static int multiboot_parse_elf(struct boot_config *bc)
 
 // scans the configured kernel for it's multiboot header.
 // returns -1 if no multiboot header is found, 0 if one is.
-static int multiboot_find_header(struct boot_config* bc)
+static int
+multiboot_find_header(struct boot_config* bc)
 {
     struct multiboot_header *header = NULL;
     uintptr_t ptr = (uintptr_t)bc->mapping;
@@ -249,22 +252,28 @@ static int multiboot_find_header(struct boot_config* bc)
     if (header->hdr.flags & (1<<16)) {
         memcpy(&bc->kernel_load_data, &header->lhdr, sizeof(header->lhdr));
         ret = 0;
-    } else
+    } else {
+        fprintf(stderr, "Parse elf\n");
         ret = multiboot_parse_elf(bc);
+    }
 
     return ret;
 }
 
-static uintptr_t guest_to_host(uintptr_t guest_addr, struct boot_config *bc)
+static uintptr_t
+guest_to_host(uintptr_t guest_addr, struct boot_config *bc)
 {
     return bc->guest_mem_base + guest_addr;
 }
-static uintptr_t host_to_guest(uintptr_t host_addr, struct boot_config *bc)
+
+static uintptr_t
+host_to_guest(uintptr_t host_addr, struct boot_config *bc)
 {
     return host_addr - bc->guest_mem_base;
 }
 
-static int multiboot_load_image(struct boot_config *bc)
+static int
+multiboot_load_image(struct boot_config *bc)
 {
     size_t image_load_size;
     uintptr_t to = guest_to_host(bc->kernel_load_data.load_addr, bc);
@@ -281,7 +290,8 @@ static int multiboot_load_image(struct boot_config *bc)
     return 0;
 }
 
-static uint64_t multiboot_set_guest_state(struct boot_config* bc)
+static uint64_t
+multiboot_set_guest_state(struct boot_config* bc)
 {
     struct multiboot_header* header = (struct multiboot_header *)bc->guest_mem_base;
     uintptr_t guest_header_ptr = host_to_guest((uintptr_t)header, bc);
@@ -299,12 +309,13 @@ static uint64_t multiboot_set_guest_state(struct boot_config* bc)
     xh_vm_set_desc(0, VM_REG_GUEST_GS, 0, 0xffffffff, 0xc093);
     xh_vm_set_desc(0, VM_REG_GUEST_SS, 0, 0xffffffff, 0xc093);
 
-    xh_vm_set_register(0, VM_REG_GUEST_CR0, 0x21);
+    xh_vm_set_register(0, VM_REG_GUEST_CR0, 0x21); /* enable protected mode */
 
     return bc->kernel_load_data.entry_addr;
 }
 
-uint64_t multiboot(void)
+uint64_t
+multiboot(void)
 {
     struct boot_config boot_config;
     struct stat st;
