@@ -104,7 +104,7 @@ struct boot_config {
     uint32_t pad;
 };
 
-struct elf_ehdr {
+struct elf32_ehdr {
     uint8_t e_ident[16];
     uint16_t e_type;
     uint16_t e_machine;
@@ -123,7 +123,7 @@ struct elf_ehdr {
 
 #define EM_X86_64 62
 
-struct elf_phdr {
+struct elf32_phdr {
     uint32_t p_type;
     uint32_t p_offset;
     uint32_t p_vaddr;
@@ -155,8 +155,8 @@ multiboot_init(char *kernel_path, char *module_list, char *kernel_append)
 static int
 multiboot_parse_elf(struct boot_config *bc)
 {
-    struct elf_ehdr *ehdr = bc->mapping;
-    struct elf_phdr *phdr;
+    struct elf32_ehdr *ehdr = bc->mapping;
+    struct elf32_phdr *phdr;
     uint32_t low = (uint32_t)-1, high = 0, memsize, addr, entry;
     int i;
 
@@ -174,7 +174,7 @@ multiboot_parse_elf(struct boot_config *bc)
 
     entry = ehdr->e_entry;
 
-    phdr = (struct elf_phdr *)((uintptr_t)bc->mapping + ehdr->e_phoff);
+    phdr = (struct elf32_phdr *)((uintptr_t)bc->mapping + ehdr->e_phoff);
     for (i = 0; i < ehdr->e_phnum; i++) {
         if (phdr[i].p_type != PT_LOAD)
             continue;
@@ -204,6 +204,11 @@ multiboot_parse_elf(struct boot_config *bc)
     bc->kernel_load_data.load_end_addr = high;
     bc->kernel_load_data.bss_end_addr = 0; // TODO
     bc->kernel_load_data.entry_addr = entry;
+    fprintf(stderr, "header_addr: %d\r\n", bc->kernel_load_data.header_addr);
+    fprintf(stderr, "load_addr: %d\r\n", bc->kernel_load_data.load_addr);
+    fprintf(stderr, "load_end_addr: %d\r\n", bc->kernel_load_data.load_end_addr);
+    fprintf(stderr, "bss_end_addr: %d\r\n", bc->kernel_load_data.bss_end_addr);
+    fprintf(stderr, "entry_addr: %d\r\n", bc->kernel_load_data.entry_addr);
 
     return 0;
 }
@@ -253,12 +258,53 @@ multiboot_find_header(struct boot_config* bc)
         memcpy(&bc->kernel_load_data, &header->lhdr, sizeof(header->lhdr));
         ret = 0;
     } else {
-        fprintf(stderr, "Parse elf\n");
         ret = multiboot_parse_elf(bc);
     }
 
     return ret;
 }
+/*
+static int
+x_multiboot_parse_elf(char *path) {
+    FILE *f;
+    
+    struct elf32_ehdr *ehdr;
+    struct elf_phdr *phdr;
+    int i;
+    ssize_t sz, pos, bytes;
+    loff_t offset;
+    
+    f = fopen(path, "r");
+    if (!f)
+        return -1;
+    
+    buf = malloc(sizeof(*ehdr));
+    if (buf == NULL)
+        return -1;
+        
+    if (fread(ehdr, sizeof(*ehdr), 1, f) != sizeof(*ehdr))
+        return -1;
+    // Check if this is an ELF file 
+    if (memcmp(ehdr.e_ident, ELFMAG, SELFMAG) != 0)
+        return -1;
+    if (ehdr->e_phoff == 0)
+        return -1;
+    if (!elf_check_arch(ehdr))
+        return -1;
+    for (i=0; i<ehdr->e_phnum; i++) {
+        phdr = ehdr->e_phoff + i * ehdr->e_phentsize;
+        if (phdr->p_type == PT_LOAD) {
+            kernel->offset = phdr->p_offset;
+            kernel->base   =
+            kernel->size   = phdr->p_filesz;
+            fclose(f);
+            return 0;
+        }
+    }
+    fclose(f);
+    return -1; // Missing PT_LOAD segment 
+}
+*/
 
 static uintptr_t
 guest_to_host(uintptr_t guest_addr, struct boot_config *bc)

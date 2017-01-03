@@ -125,7 +125,7 @@ console_handler(UNUSED int vcpu, int in, UNUSED int port, int bytes,
 		ttyopen();
 		opened = 1;
 	}
-	
+
 	if (in)
 		*eax = (uint32_t) ttyread();
 	else
