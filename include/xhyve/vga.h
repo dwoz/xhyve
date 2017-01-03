@@ -155,6 +155,7 @@
 #define	DAC_IDX_WR_PORT			0x3c8
 #define	DAC_DATA_PORT			0x3c9
 
+struct vmctx;
 void	*vga_init(int io_only);
 void vga_render(struct bhyvegc *gc, void *arg);
 

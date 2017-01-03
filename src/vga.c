@@ -43,8 +43,12 @@
 #include "xhyve/vga.h"
 
 #define	KB	(1024UL)
+/*
 #define	MB	(1024 * 1024UL)
+*/
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpadded"
 struct vga_softc {
 	struct mem_range	mr;
 
@@ -167,6 +171,7 @@ struct vga_softc {
 		uint32_t	dac_palette_rgb[256];
 	} vga_dac;
 };
+#pragma clang diagnostic pop
 
 static bool
 vga_in_reset(struct vga_softc *sc)
@@ -323,7 +328,7 @@ vga_render(struct bhyvegc *gc, void *arg)
 
 	if (vga_in_reset(sc)) {
 		memset(sc->gc_image->data, 0,
-		    sc->gc_image->width * sc->gc_image->height *
+		    (size_t)sc->gc_image->width * (size_t)sc->gc_image->height *
 		     sizeof (uint32_t));
 		return;
 	}
@@ -334,6 +339,9 @@ vga_render(struct bhyvegc *gc, void *arg)
 		vga_render_text(sc);
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma clang diagnostic ignored "-Wconversion"
 static uint64_t
 vga_mem_rd_handler(struct vmctx *ctx, uint64_t addr, void *arg1)
 {
@@ -341,7 +349,7 @@ vga_mem_rd_handler(struct vmctx *ctx, uint64_t addr, void *arg1)
 	uint8_t map_sel;
 	int offset;
 
-	offset = addr;
+	offset = (int)addr;
 	switch (sc->vga_gc.gc_misc_mm) {
 	case 0x0:
 		/*
@@ -448,8 +456,8 @@ vga_mem_wr_handler(struct vmctx *ctx, uint64_t addr, uint8_t val, void *arg1)
 		/* write mode 0 */
 		mask = sc->vga_gc.gc_bit_mask;
 
-		val = (val >> sc->vga_gc.gc_rotate) |
-		    (val << (8 - sc->vga_gc.gc_rotate));
+		val = (val >> (uint8_t)sc->vga_gc.gc_rotate) |
+		    (val << (8 - (uint8_t)sc->vga_gc.gc_rotate));
 
 		switch (sc->vga_gc.gc_op) {
 		case 0x00:		/* replace */
@@ -809,7 +817,9 @@ vga_port_in_handler(struct vmctx *ctx, int in, int port, int bytes,
 		break;
 	case ATC_DATA_PORT:
 		switch (sc->vga_atc.atc_index) {
-		case ATC_PALETTE0 ... ATC_PALETTE15:
+                // XXX
+		case ATC_PALETTE0:
+                case ATC_PALETTE15:
 			*val = sc->vga_atc.atc_palette[sc->vga_atc.atc_index];
 			break;
 		case ATC_MODE_CONTROL:
@@ -1047,7 +1057,8 @@ vga_port_out_handler(struct vmctx *ctx, int in, int port, int bytes,
 			sc->vga_atc.atc_index = val & ATC_IDX_MASK;
 		} else {
 			switch (sc->vga_atc.atc_index) {
-			case ATC_PALETTE0 ... ATC_PALETTE15:
+			case ATC_PALETTE0:
+                        case ATC_PALETTE15:
 				sc->vga_atc.atc_palette[sc->vga_atc.atc_index] = val & 0x3f;
 				break;
 			case ATC_MODE_CONTROL:
@@ -1261,6 +1272,7 @@ vga_port_handler(struct vmctx *ctx, int vcpu, int in, int port, int bytes,
 	return (error);
 }
 
+
 void *
 vga_init(int io_only)
 {
@@ -1276,7 +1288,7 @@ vga_init(int io_only)
 		iop.port = port;
 		iop.size = 1;
 		iop.flags = IOPORT_F_INOUT;
-		iop.handler = vga_port_handler;
+		iop.handler = (inout_func_t)vga_port_handler;
 		iop.arg = sc;
 
 		error = register_inout(&iop);
@@ -1293,7 +1305,7 @@ vga_init(int io_only)
 	sc->mr.flags = MEM_F_RW;
 	sc->mr.base = 640 * KB;
 	sc->mr.size = 128 * KB;
-	sc->mr.handler = vga_mem_handler;
+	sc->mr.handler = (mem_func_t)vga_mem_handler;
 	sc->mr.arg1 = sc;
 	error = register_mem_fallback(&sc->mr);
 	assert(error == 0);
@@ -1327,3 +1339,4 @@ vga_init(int io_only)
 
 	return (sc);
 }
+#pragma clang diagnostic pop
